@@ -48,6 +48,7 @@ typedef struct node
     char room[ROOM_LENGTH];
 } schedule;
 
+char *getInput();
 schedule *allocateMemory(char *line);
 int sortByTime(const void *a, const void *b);
 
@@ -96,45 +97,20 @@ int main()
         // printf("Total lessons: %d\n", totalLesson);
         //  close the file
         fclose(file);
-
-        // Print the data list for testing purpose
-        for (int i = 0; i < totalLesson; i++)
-        {
-            printf("%s, %s, %s, %s", weeklySchedule[i]->day, weeklySchedule[i]->time, weeklySchedule[i]->course, weeklySchedule[i]->room);
-        }
+        /*
+                // Print the data list for testing purpose
+                for (int i = 0; i < totalLesson; i++)
+                {
+                    printf("%s, %s, %s, %s", weeklySchedule[i]->day, weeklySchedule[i]->time, weeklySchedule[i]->course, weeklySchedule[i]->room);
+                }
+                printf("\n");
+        */
         // keep asking user unless "stop" entered
-        char weekday[11];
-        printf("Enter day or 'stop' to quit: ");
-        while (fgets(weekday, sizeof(weekday), stdin) == NULL)
-        {
-            fprintf(stderr, "Error reading input\n");
-            printf("Enter day or 'stop' to quit: ");
-        }
-        // control overflow safe for fgets
-        if (strchr(weekday, '\n') == NULL)
-        {
-            // empty input buffer
-            while (getchar() != '\n')
-                ;
-        }
-        // replace \n from weekday with \0
-        if (weekday[strlen(weekday) - 1] == '\n')
-        {
-            weekday[strlen(weekday) - 1] = '\0';
-        }
+        char *weekday;
+        weekday = getInput();
 
-        while (strcmp(weekday, "stop") != 0)
+        while (strcmp(weekday, "Stop") != 0)
         {
-            // convert the input word to lower case
-            int i = 0;
-            while (weekday[i] != '\0')
-            {
-                weekday[i] = tolower(weekday[i]);
-                i++;
-            }
-            // convert back the 1st letter of weekday to upper case
-            weekday[0] = toupper(weekday[0]);
-            // printf("%s\n", weekday);
             bool mistyped = true;
             for (int i = 0; i < 7; i++)
             {
@@ -189,26 +165,16 @@ int main()
                     printf("No classes today\n\n");
                 }
             }
+            // free weekday before getting a new input
+            free(weekday);
 
-            //
-            printf("Enter day or 'stop' to quit: ");
-            while (fgets(weekday, sizeof(weekday), stdin) == NULL)
-            {
-                fprintf(stderr, "Error reading input\n");
-                printf("Enter day or 'stop' to quit: ");
-            }
-            // control overflow safe for fgets
-            if (strchr(weekday, '\n') == NULL)
-            {
-                // empty input buffer
-                while (getchar() != '\n')
-                    ;
-            }
-            // replace \n from weekday with \0
-            if (weekday[strlen(weekday) - 1] == '\n')
-            {
-                weekday[strlen(weekday) - 1] = '\0';
-            }
+            // continue for a new input
+            weekday = getInput();
+        }
+        // free memory before exiting
+        for (int i = 0; i < totalLesson; i++)
+        {
+            free(weeklySchedule[i]);
         }
     }
     else
@@ -216,11 +182,51 @@ int main()
         fprintf(stderr, "Unable to open file %s for reading\n", FILE_NAME);
         exit(1);
     }
-    // free memory before exiting
-
     return 0;
 }
 
+// function to get input from user
+char *getInput()
+{
+    int i = 0;
+    char *weekday = malloc(sizeof(char) * 11);
+    if (weekday == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed for weekday.\n");
+        exit(1);
+    }
+
+    printf("Enter day or 'stop' to quit: ");
+    while (fgets(weekday, 11, stdin) == NULL)
+    {
+        fprintf(stderr, "Error reading input\n");
+        printf("Enter day or 'stop' to quit: ");
+    }
+    // control overflow safe for fgets
+    if (strchr(weekday, '\n') == NULL)
+    {
+        // empty input buffer
+        while (getchar() != '\n')
+            ;
+    }
+    // replace \n from weekday with \0
+    if (weekday[strlen(weekday) - 1] == '\n')
+    {
+        weekday[strlen(weekday) - 1] = '\0';
+    }
+    // convert the input word to lower case
+    while (weekday[i] != '\0')
+    {
+        weekday[i] = tolower(weekday[i]);
+        i++;
+    }
+    // convert back the 1st letter of weekday to upper case
+    weekday[0] = toupper(weekday[0]);
+    // printf("%s\n", weekday);
+    return weekday;
+}
+
+// function to allocate memory for a new node
 schedule *allocateMemory(char *line)
 {
     // check if data is in correct format
@@ -251,7 +257,7 @@ schedule *allocateMemory(char *line)
                         schedule *newNode = (schedule *)malloc(sizeof(schedule));
                         if (newNode == NULL)
                         {
-                            fprintf(stderr, "Memory allocation failed.\n");
+                            fprintf(stderr, "Memory allocation failed for a new schedule.\n");
                             exit(1);
                         }
                         // memory allocation succeeded
@@ -268,12 +274,23 @@ schedule *allocateMemory(char *line)
     return NULL;
 }
 
+// function to sort daily lessons by time
 int sortByTime(const void *a, const void *b)
 {
-    int cal = strcmp((*(schedule *)b).time, (*(schedule *)a).time);
-    if (cal < 0)
+    const schedule *timeA = (const schedule *)a;
+    const schedule *timeB = (const schedule *)b;
+    int hourA, minuteA, hourB, minuteB;
+    // printf("%s\n", timeA->time);
+    sscanf(timeA->time, "%d:%d", &hourA, &minuteA);
+    sscanf(timeB->time, "%d:%d", &hourB, &minuteB);
+    if (hourA < hourB)
         return -1;
-    else if (cal > 0)
+    if (hourA > hourB)
         return 1;
+    if (minuteA < minuteB)
+        return -1;
+    if (minuteA > minuteB)
+        return 1;
+    return 0;
 }
 ```
