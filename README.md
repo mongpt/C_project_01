@@ -63,7 +63,6 @@ int main()
     {
         // count how many valid data lines in order to declare enough space for weeklySchedule
         int countValidLines = 0;
-        char c;
         while (!feof(file))
         {
             char line[LINE_SIZE];
@@ -101,7 +100,7 @@ int main()
                 // Print the data list for testing purpose
                 for (int i = 0; i < totalLesson; i++)
                 {
-                    printf("%s, %s, %s, %s", weeklySchedule[i]->day, weeklySchedule[i]->time, weeklySchedule[i]->course, weeklySchedule[i]->room);
+                    printf("%s, %s, %s, %s\n", weeklySchedule[i]->day, weeklySchedule[i]->time, weeklySchedule[i]->course, weeklySchedule[i]->room);
                 }
                 printf("\n");
         */
@@ -156,13 +155,13 @@ int main()
                     printf("\nOn %s you have: \n", todayClass[0].day);
                     for (int i = 0; i < lessonNum; i++)
                     {
-                        printf("%5s %s, %s", todayClass[i].time, todayClass[i].course, todayClass[i].room);
+                        printf("%5s %s, %s\n", todayClass[i].time, todayClass[i].course, todayClass[i].room);
                     }
                     printf("\n");
                 }
                 else // today's classes not found
                 {
-                    printf("No classes today\n\n");
+                    printf("\nNo classes today\n\n");
                 }
             }
             // free weekday before getting a new input
@@ -217,11 +216,11 @@ char *getInput()
     // convert the input word to lower case
     while (weekday[i] != '\0')
     {
-        weekday[i] = tolower(weekday[i]);
+        weekday[i] = (char)tolower(weekday[i]);
         i++;
     }
     // convert back the 1st letter of weekday to upper case
-    weekday[0] = toupper(weekday[0]);
+    weekday[0] = (char)toupper(weekday[0]);
     // printf("%s\n", weekday);
     return weekday;
 }
@@ -229,46 +228,29 @@ char *getInput()
 // function to allocate memory for a new node
 schedule *allocateMemory(char *line)
 {
-    // check if data is in correct format
+    // check if line contains ':' or not (to eliminate the header line, empty lines, and invalid data lines)
     if (strchr(line, ':') != NULL)
     {
-        char *token;
-        token = strtok(line, ",");
-        if (token != NULL)
+        char daytmp[DAY_LENGTH];
+        char timetmp[TIME_LENGTH];
+        char coursetmp[COURSE_LENGTH];
+        char roomtmp[ROOM_LENGTH];
+        // validate data (enough fields)
+        if (sscanf(line, "%[^,],%[^,],%[^,],%s", daytmp, timetmp, coursetmp, roomtmp) == 4)
         {
-            char daytmp[10];
-            strncpy(daytmp, token, sizeof(daytmp));
-            token = strtok(NULL, ",");
-            if (token != NULL)
+            // move all tmp data to new node
+            schedule *newNode = (schedule *)malloc(sizeof(schedule));
+            if (newNode == NULL)
             {
-                char timetmp[10];
-                strncpy(timetmp, token, sizeof(timetmp));
-                token = strtok(NULL, ",");
-                if (token != NULL)
-                {
-                    char coursetmp[100];
-                    strncpy(coursetmp, token, sizeof(coursetmp));
-                    token = strtok(NULL, ",");
-                    if (token != NULL)
-                    {
-                        char roomtmp[10];
-                        strncpy(roomtmp, token, sizeof(roomtmp));
-                        // move all tmp data to new node
-                        schedule *newNode = (schedule *)malloc(sizeof(schedule));
-                        if (newNode == NULL)
-                        {
-                            fprintf(stderr, "Memory allocation failed for a new schedule.\n");
-                            exit(1);
-                        }
-                        // memory allocation succeeded
-                        strncpy(newNode->day, daytmp, sizeof(newNode->day));
-                        strncpy(newNode->time, timetmp, sizeof(newNode->time));
-                        strncpy(newNode->course, coursetmp, sizeof(newNode->course));
-                        strncpy(newNode->room, roomtmp, sizeof(newNode->room));
-                        return newNode;
-                    }
-                }
+                fprintf(stderr, "Memory allocation failed for a new schedule.\n");
+                exit(1);
             }
+            // memory allocation succeeded
+            strncpy(newNode->day, daytmp, sizeof(newNode->day));
+            strncpy(newNode->time, timetmp, sizeof(newNode->time));
+            strncpy(newNode->course, coursetmp, sizeof(newNode->course));
+            strncpy(newNode->room, roomtmp, sizeof(newNode->room));
+            return newNode;
         }
     }
     return NULL;
