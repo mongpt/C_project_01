@@ -53,131 +53,128 @@ int main()
 {
     FILE *file;
     int totalLesson = 0;
-    const char dayOfWeek[7][10] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+    const char dayOfWeek[7][DAY_LENGTH] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
     // read csv file
     file = fopen(FILE_NAME, "r");
-    if (file != NULL)
-    {
-        // count how many valid data lines in order to declare enough space for weeklySchedule
-        int countValidLines = 0;
-        while (!feof(file))
-        {
-            char line[LINE_SIZE];
-            if (fgets(line, sizeof(line), file))
-            {
-                if (strchr(line, ':') != NULL)
-                {
-                    countValidLines++;
-                }
-            }
-        }
-        // printf("Total valid data lines: %d\n", countValidLines);
-        // initialize weeklySchedule that holds the total number of weekly lessons based on countValidLines
-        schedule *weeklySchedule[countValidLines];
-        rewind(file); // Set position of stream to the beginning
-        while (!feof(file))
-        {
-            char line[LINE_SIZE];
-            if (fgets(line, sizeof(line), file))
-            {
-                // printf(">>>> Here\n");
-                schedule *newNode = allocateMemory(line);
-                if (newNode != NULL) // data was OK and a new node has been created
-                {
-                    // printf("%p\n", newNode);
-                    weeklySchedule[totalLesson] = newNode;
-                    totalLesson++;
-                }
-            }
-        }
-        // printf("Total lessons: %d\n", totalLesson);
-        //  close the file
-        fclose(file);
-        /*
-                // Print the data list for testing purpose
-                for (int i = 0; i < totalLesson; i++)
-                {
-                    printf("%s, %s, %s, %s\n", weeklySchedule[i]->day, weeklySchedule[i]->time, weeklySchedule[i]->course, weeklySchedule[i]->room);
-                }
-                printf("\n");
-        */
-        // keep asking user unless "stop" entered
-        char *weekday;
-        weekday = getInput();
-
-        while (strcmp(weekday, "Stop") != 0)
-        {
-            bool mistyped = true;
-            for (int i = 0; i < 7; i++)
-            {
-                // check if input day is mistyped or not
-                if (strcmp(dayOfWeek[i], weekday) == 0)
-                {
-                    mistyped = false;
-                    break;
-                }
-            }
-            if (!mistyped) // lookup data if weekday is correct
-            {
-                // printf("day checked ok\n");
-                bool scheduleFound = false;
-                schedule todayClass[MAX_DAILY_LESSONS];
-                int lessonNum = 0;
-                for (int i = 0; i < totalLesson; i++)
-                {
-                    const schedule *tmp = weeklySchedule[i]; // convert non-const type to const type for strcmp and strcpy
-                    if (strcmp(weekday, tmp->day) == 0)
-                    {
-                        if (lessonNum < MAX_DAILY_LESSONS) // make sure total lessons for a day is not exceed the defined total
-                        {
-                            scheduleFound = true;
-                            strcpy(todayClass[lessonNum].day, tmp->day);
-                            strcpy(todayClass[lessonNum].time, tmp->time);
-                            strcpy(todayClass[lessonNum].course, tmp->course);
-                            strcpy(todayClass[lessonNum].room, tmp->room);
-                            lessonNum++;
-                        }
-                        else
-                        {
-                            printf("Exceed the total number of daily lessons.\n");
-                        }
-                    }
-                }
-                // printf("%d lessonNum\n", lessonNum);
-                if (scheduleFound) // found classes for today
-                {
-                    // sort today's lessons by time
-                    qsort(todayClass, lessonNum, sizeof(schedule), sortByTime);
-                    // print out today's lessons
-                    printf("\nOn %s you have: \n", todayClass[0].day);
-                    for (int i = 0; i < lessonNum; i++)
-                    {
-                        printf("%5s %s, %s\n", todayClass[i].time, todayClass[i].course, todayClass[i].room);
-                    }
-                    printf("\n");
-                }
-                else // today's classes not found
-                {
-                    printf("\nNo classes today\n\n");
-                }
-            }
-            // free weekday before getting a new input
-            free(weekday);
-
-            // continue for a new input
-            weekday = getInput();
-        }
-        // free memory before exiting
-        for (int i = 0; i < totalLesson; i++)
-        {
-            free(weeklySchedule[i]);
-        }
-    }
-    else
+    if (file == NULL)
     {
         fprintf(stderr, "Unable to open file %s for reading\n", FILE_NAME);
         exit(1);
     }
+    // count how many valid data lines in order to declare enough space for weeklySchedule
+    // a valid data line must contain ':'
+    int countValidLines = 0;
+    while (!feof(file))
+    {
+        char line[LINE_SIZE];
+        if (fgets(line, LINE_SIZE, file))
+        {
+            if (strchr(line, ':') != NULL)
+            {
+                countValidLines++;
+            }
+        }
+    }
+    // printf("Total valid data lines: %d\n", countValidLines);
+    // initialize weeklySchedule that holds the total number of weekly lessons based on countValidLines
+    schedule *weeklySchedule[countValidLines];
+    rewind(file); // Set position of stream to the beginning
+    while (!feof(file))
+    {
+        char line[LINE_SIZE];
+        if (fgets(line, LINE_SIZE, file))
+        {
+            // printf(">>>> Here\n");
+            if ((weeklySchedule[totalLesson] = allocateMemory(line)) != NULL) // data was OK and a new node has been created
+            {
+                // printf("%p\n", newNode);
+                totalLesson++;
+            }
+        }
+    }
+    // printf("Total lessons: %d\n", totalLesson);
+    //  close the file
+    fclose(file);
+    /*
+            // Print the data list for testing purpose
+            for (int i = 0; i < totalLesson; i++)
+            {
+                printf("%s, %s, %s, %s\n", weeklySchedule[i]->day, weeklySchedule[i]->time, weeklySchedule[i]->course, weeklySchedule[i]->room);
+            }
+            printf("\n");
+    */
+    // keep asking user unless "stop" entered
+    char *weekday;
+    weekday = getInput();
+
+    while (strcmp(weekday, "Stop") != 0)
+    {
+        bool mistyped = true;
+        for (int i = 0; i < 7; i++)
+        {
+            // check if input day is mistyped or not
+            if (strcmp(dayOfWeek[i], weekday) == 0)
+            {
+                mistyped = false;
+                break;
+            }
+        }
+        if (!mistyped) // lookup data if weekday is correct
+        {
+            // printf("day checked ok\n");
+            bool scheduleFound = false;
+            schedule todayClass[MAX_DAILY_LESSONS];
+            int lessonNum = 0;
+            for (int i = 0; i < totalLesson; i++)
+            {
+                const schedule *tmp = weeklySchedule[i]; // convert non-const type to const type for strcmp and strcpy
+                if (strcmp(weekday, tmp->day) == 0)
+                {
+                    if (lessonNum < MAX_DAILY_LESSONS) // make sure total lessons for a day is not exceed the defined total
+                    {
+                        scheduleFound = true;
+                        strcpy(todayClass[lessonNum].day, tmp->day);
+                        strcpy(todayClass[lessonNum].time, tmp->time);
+                        strcpy(todayClass[lessonNum].course, tmp->course);
+                        strcpy(todayClass[lessonNum].room, tmp->room);
+                        lessonNum++;
+                    }
+                    else
+                    {
+                        printf("Exceed the total number of daily lessons.\n");
+                    }
+                }
+            }
+            // printf("%d lessonNum\n", lessonNum);
+            if (scheduleFound) // found classes for today
+            {
+                // sort today's lessons by time
+                qsort(todayClass, lessonNum, sizeof(schedule), sortByTime);
+                // print out today's lessons
+                printf("\nOn %s you have: \n", todayClass[0].day);
+                for (int i = 0; i < lessonNum; i++)
+                {
+                    printf("%5s %s, %s\n", todayClass[i].time, todayClass[i].course, todayClass[i].room);
+                }
+                printf("\n");
+            }
+            else // today's classes not found
+            {
+                printf("\nNo classes today\n\n");
+            }
+        }
+        // free weekday before getting a new input
+        free(weekday);
+
+        // continue for a new input
+        weekday = getInput();
+    }
+    // free memory before exiting
+    for (int i = 0; i < totalLesson; i++)
+    {
+        free(weeklySchedule[i]);
+    }
+
     return 0;
 }
 
@@ -185,7 +182,7 @@ int main()
 char *getInput()
 {
     int i = 0;
-    char *weekday = malloc(sizeof(char) * 11);
+    char *weekday = malloc(sizeof(char) * DAY_LENGTH);
     if (weekday == NULL)
     {
         fprintf(stderr, "Memory allocation failed for weekday.\n");
@@ -193,7 +190,7 @@ char *getInput()
     }
 
     printf("Enter day or 'stop' to quit: ");
-    while (fgets(weekday, 11, stdin) == NULL)
+    while (fgets(weekday, DAY_LENGTH, stdin) == NULL)
     {
         fprintf(stderr, "Error reading input\n");
         printf("Enter day or 'stop' to quit: ");
